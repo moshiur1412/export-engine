@@ -21,9 +21,8 @@ TurboStream Export Engine is designed for Laravel applications that need to expo
 - **Filter Names in Filename**: Downloaded files include applied filters in filename
 - **Multiple Queue Drivers**: Redis (recommended), Database, or Sync
 - **Auto Chunk Sizing**: Automatically adjusts chunk size based on data volume
-- **Laravel Native**: Integrates seamlessly with Laravel 9, 10, and 11
-- **Advanced PDF Reports**: Subtotals, grand totals, colspan/rowspan support
-- **Streaming PDF**: Memory-efficient export for 100M+ records
+- **Laravel Native**: Integrates seamlessly with Laravel 9, 10, 11, 12, and 13
+- **PDF Support**: TCPDF for simple PDFs, evosys21/pdflib for advanced features
 - **Format-Specific Memory**: Automatic memory limit adjustment per format (2GB for XLSX/PDF/DOCX)
 
 ## Requirements
@@ -35,13 +34,14 @@ TurboStream Export Engine is designed for Laravel applications that need to expo
 
 ### Optional Dependencies
 
-| Format | Package | Install |
-|--------|---------|---------|
-| XLSX | PhpSpreadsheet | Included |
-| PDF | TCPDF | Included |
-| PDF (Advanced) | evosys21/pdflib | Included |
-| DOCX | PhpWord | Included |
-| CSV | League CSV | Included |
+| Format | Package | Status | Use Case |
+|--------|---------|--------|----------|
+| CSV | League CSV | ✅ Included | Best for 100M+ records |
+| XLSX | PhpSpreadsheet | ✅ Included | Reports & Excel files |
+| PDF | TCPDF | ✅ Included | Simple table-based PDFs |
+| PDF (Advanced) | evosys21/pdflib | Optional | Subtotals, colspan, complex layouts |
+| DOCX | PhpWord | ✅ Included | Word documents |
+| SQL | Built-in | ✅ Included | Database backup/migration |
 
 ## Installation
 
@@ -130,38 +130,118 @@ $downloadUrl = ExportFacade::getDownloadUrl($exportId);
 
 ## Export Formats
 
-### CSV (Default)
-- Fastest export
-- Best for large datasets (100M+ records)
-- Memory efficient streaming writes
+This package supports **5 export formats** for different use cases:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        5 EXPORT FORMATS SUPPORTED                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐      │
+│  │    CSV   │  │   XLSX   │  │   PDF    │  │   DOCX   │  │   SQL    │      │
+│  ├──────────┤  ├──────────┤  ├──────────┤  ├──────────┤  ├──────────┤      │
+│  │    📄    │  │    📊    │  │    📑    │  │    📝    │  │  🗄️     │      │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘      │
+│       │             │             │             │             │          │
+│       ▼             ▼             ▼             ▼             ▼          │
+│  Streaming      Memory-       TCPDF/         Memory-       Streaming     │
+│  (100M+ OK)     based         pdflib         based         (100M+ OK)     │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### CSV (Recommended for Large Data)
+```
+┌────────────────────────────────────────────────────────┐
+│  Format:  comma-separated-values.csv                   │
+│  Speed:   ⚡⚡⚡⚡⚡ (FASTEST)                            │
+│  Memory:  ~1GB (constant - streaming)                  │
+│  Best for: 100M+ records, data backup, API export     │
+│  Install:  ✅ Included (League CSV)                   │
+└────────────────────────────────────────────────────────┘
+```
 
 ### XLSX (Excel)
-- Formatted headers with styling
-- Auto-sizing columns
-- Best for reports and sharing
-- Uses running totals instead of storing all records in memory
-- Requires 2GB memory for large datasets (50,000+ records)
+```
+┌────────────────────────────────────────────────────────┐
+│  Format:  spreadsheet.xlsx                             │
+│  Speed:   ⚡⚡⚡ (moderate)                             │
+│  Memory:  ~2GB (grows with records)                   │
+│  Best for: Reports, sharing, printing                 │
+│  Install:  ✅ Included (PhpSpreadsheet)               │
+└────────────────────────────────────────────────────────┘
+```
 
-### PDF
-- Professional document formatting
-- Header/footer with page numbers
-- Memory efficient (garbage collection every 1000 rows)
-- Optional: Subtotals, grand totals, colspan/rowspan support
-- Use `setGroupBy()` to enable subtotals
-- Use `addCustomRow()` for custom headers with colspan
-- Best for small to medium reports (under 5,000 records)
-- Requires 2GB memory for larger datasets (may timeout for 50K+ records)
+### PDF (Documents)
+```
+┌────────────────────────────────────────────────────────┐
+│  Format:  document.pdf                                 │
+│  Speed:   ⚡⚡ (slower)                                 │
+│  Memory:  ~2GB (grows with records)                   │
+│  Best for: Invoices, reports, simple documents         │
+│                                                        │
+│  Two options:                                          │
+│  • TCPDF (default) - Simple PDFs, included            │
+│  • pdflib (advanced) - Subtotals, colspan             │
+│  Install:  ✅ TCPDF included, pdflib optional         │
+└────────────────────────────────────────────────────────┘
+```
 
 ### DOCX (Word)
-- Table-formatted output
-- Professional document layout
-- Best for documentation
+```
+┌────────────────────────────────────────────────────────┐
+│  Format:  document.docx                                │
+│  Speed:   ⚡⚡ (slower)                                 │
+│  Memory:  ~2GB (grows with records)                   │
+│  Best for: Documentation, letters, contracts          │
+│  Install:  ✅ Included (PhpWord)                       │
+└────────────────────────────────────────────────────────┘
+```
 
-### SQL
-- Database import ready
-- INSERT statements with batch commits
-- Includes CREATE TABLE statement
-- Best for database migrations/backup
+### SQL (Database)
+```
+┌────────────────────────────────────────────────────────┐
+│  Format:  dump.sql                                     │
+│  Speed:   ⚡⚡⚡⚡⚡ (fast)                              │
+│  Memory:  ~1GB (constant - streaming)                  │
+│  Best for: DB backup, migration, re-import            │
+│  Install:  ✅ Built-in (no extra package)             │
+└────────────────────────────────────────────────────────┘
+```
+
+### Quick Decision Guide
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                    WHICH FORMAT TO CHOOSE?                         │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  How many records?                                                 │
+│                                                                    │
+│  ┌─────────────┐                                                  │
+│  │  100M+     │ ──────▶  CSV (streaming, memory efficient)       │
+│  └─────────────┘                                                  │
+│                                                                    │
+│  ┌─────────────┐                                                  │
+│  │  1M - 100M  │ ──────▶  CSV (recommended)                      │
+│  └─────────────┘         or SQL                                    │
+│                                                                    │
+│  ┌─────────────┐                                                  │
+│  │  < 1M       │ ──────▶  Any format (CSV/XLSX/PDF/DOCX/SQL)     │
+│  └─────────────┘                                                  │
+│                                                                    │
+│  ─────────────────────────────────────────────────────────         │
+│                                                                    │
+│  What is the purpose?                                              │
+│                                                                    │
+│  • Data backup/migration ──▶ CSV or SQL                           │
+│  • Excel report ──────────▶ XLSX                                   │
+│  • Print document ────────▶ PDF                                    │
+│  • Word document ────────▶ DOCX                                   │
+│  • Share with non-tech ──▶ XLSX                                    │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+```
 
 ## API Reference
 
@@ -258,19 +338,43 @@ ExportFacade::listExports(int $limit = 10): array;
 ExportFacade::deleteExport(string $exportId): bool;
 ```
 
-## Advanced PDF Reports
+## PDF Export Options
 
-One unified PDF driver handles all use cases:
+This package supports TWO PDF libraries for different needs:
 
-| Feature | Method | Description |
-|---------|--------|-------------|
-| Simple PDF | (default) | Basic table with headers and data |
-| Subtotals | `setGroupBy()` | Auto-subtotals when group changes |
-| Grand Total | (auto) | Final total at end of report |
-| Colspan | `addCustomRow()` | Custom rows spanning columns |
-| 100M+ Records | (auto) | Memory efficient with GC every 1000 rows |
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        PDF OPTIONS COMPARISON                            │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────────────────┐      ┌─────────────────────────┐         │
+│  │      TCPDF             │      │    evosys21/pdflib      │         │
+│  │    (Default)           │      │     (Advanced)          │         │
+│  ├─────────────────────────┤      ├─────────────────────────┤         │
+│  │ • Simple tables        │      │ • Subtotals per group   │         │
+│  │ • Headers/Footers      │      │ • Grand totals          │         │
+│  │ • Basic styling        │      │ • Colspan/Rowspan       │         │
+│  │ • Fast processing      │      │ • Complex layouts       │         │
+│  │ • Included by default  │      │ • Requires extra install│         │
+│  └─────────────────────────┘      └─────────────────────────┘         │
+│                                                                         │
+│  Install Advanced PDF:                                                 │
+│  composer require evosys21/pdflib                                       │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
-### Using the PDF Driver
+### Which PDF Should You Use?
+
+| Use Case | Recommended | Install Required |
+|----------|-------------|------------------|
+| Simple data export | TCPDF | ❌ No (default) |
+| Invoice generation | TCPDF | ❌ No (default) |
+| Report with subtotals | pdflib | ✅ Yes |
+| Complex layouts | pdflib | ✅ Yes |
+| 100M+ records | CSV (recommended) | - |
+
+### Using TCPDF (Simple PDF - Default)
 
 ```php
 use TurboStreamExport\Contracts\Drivers\PdfExportDriver;
@@ -279,15 +383,15 @@ $driver = new PdfExportDriver();
 
 // Simple report
 $driver->setReportInfo('Employee Report', ['status' => 'active']);
-$columns = ['id', 'name', 'salary'];
+$columns = ['id', 'name', 'email', 'department'];
 $driver->writeHeader($columns);
 foreach ($employees as $e) {
-    $driver->writeRow([$e->id, $e->name, $e->salary]);
+    $driver->writeRow([$e->id, $e->name, $e->email, $e->department]);
 }
 $driver->finalize($filePath);
 ```
 
-### PDF with Subtotals
+### Using pdflib (Advanced PDF)
 
 ```php
 use TurboStreamExport\Contracts\Drivers\PdfExportDriver;
@@ -726,48 +830,144 @@ public function test_csv_driver_handles_large_batch(): void
 ### Export Process Flow
 
 ```
-┌──────────────┐
-│ createExport │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│   Validate   │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐
-│ Dispatch Job │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────┐     ┌─────────────┐
-│ Queue Worker│────▶│ 100M+ Data  │
-└─────────────┘     └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │ Auto Chunk  │
-                    │ (5K-20K)    │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │  Streaming  │
-                    │   Export    │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │ Update Cache│
-                    │ + Progress  │
-                    └──────┬──────┘
-                           │
-                           ▼
-                    ┌─────────────┐
-                    │   File      │
-                    │ (filter_*)  │
-                    └─────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        USER REQUEST                                 │
+│  ExportFacade::createExport([                                       │
+│    'model' => User::class,                                         │
+│    'format' => 'csv',                                               │
+│    'filters' => [['status', '=', 'active']]                        │
+│  ])                                                                  │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                         VALIDATION                                   │
+│  • Validate model exists                                           │
+│  • Check columns exist                                             │
+│  • Validate format (csv/xlsx/pdf/docx/sql)                        │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      DISPATCH JOB                                   │
+│  ProcessExportJob dispatched to 'exports' queue                   │
+│  Job ID = exportId (UUID)                                          │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │  async
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    QUEUE WORKER (Redis)                             │
+│                                                                     │
+│  ┌──────────────┐   ┌──────────────┐   ┌──────────────┐          │
+│  │ Worker 1     │   │ Worker 2     │   │ Worker N     │          │
+│  │ ProcessExport│   │ ProcessExport│   │ ProcessExport│          │
+│  └──────────────┘   └──────────────┘   └──────────────┘          │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      CHUNK PROCESSING                                │
+│                                                                     │
+│   Auto Chunk Sizing:                                                │
+│   ┌─────────────┬─────────────┬─────────────┬─────────────┐      │
+│   │   < 1M      │  1M - 10M   │ 10M - 100M  │   100M+     │      │
+│   │  5,000 rec  │  10,000 rec │ 15,000 rec  │ 20,000 rec  │      │
+│   └─────────────┴─────────────┴─────────────┴─────────────┘      │
+│                                                                     │
+│   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │
+│   │   cursor()  │──▶│   Write     │──▶│   Progress  │            │
+│   │  (stream)   │   │   Batch     │   │   Update   │            │
+│   └─────────────┘   └─────────────┘   └─────────────┘            │
+│        │                 │                 │                      │
+│        ▼                 ▼                 ▼                      │
+│   ┌─────────────┐   ┌─────────────┐   ┌─────────────┐            │
+│   │  Memory     │   │   File      │   │    Redis    │            │
+│   │  Efficient  │   │   Output    │   │    Cache    │            │
+│   └─────────────┘   └─────────────┘   └─────────────┘            │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      FILE GENERATED                                 │
+│                                                                     │
+│   exports/users_export_filtered_status=_active_2026-01-01.csv     │
+│                                                                     │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      DOWNLOAD READY                                  │
+│                                                                     │
+│   ExportFacade::getDownloadUrl($exportId)                          │
+│   → Signed URL (valid 1 hour)                                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 5 Export Formats - When to Use Which
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                        CHOOSE YOUR FORMAT                                  │
+└────────────────────────────────┬───────────────────────────────────────────┘
+                                 │
+        ┌────────────────────────┼────────────────────────────────┐
+        │                        │                                │
+        ▼                        ▼                                ▼
+┌───────────────┐      ┌─────────────────┐           ┌─────────────────┐
+│   CSV         │      │   XLSX          │           │   SQL           │
+│   (FASTEST)   │      │   (Excel)       │           │   (Database)    │
+├───────────────┤      ├─────────────────┤           ├─────────────────┤
+│ Best for:     │      │ Best for:       │           │ Best for:       │
+│ • 100M+ rec  │      │ • Reports       │           │ • DB Migration  │
+│ • Data backup │      │ • Sharing       │           │ • Backup        │
+│ • API export  │      │ • Printing      │           │ • Re-import     │
+├───────────────┤      ├─────────────────┤           ├─────────────────┤
+│ Memory: 1GB   │      │ Memory: 2GB     │           │ Memory: 1GB     │
+│ Stream: YES   │      │ Stream: NO      │           │ Stream: YES     │
+└───────────────┘      └─────────────────┘           └─────────────────┘
+        │                        │                                │
+        └────────────────────────┼────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────┐      ┌─────────────────┐
+│   PDF           │      │   DOCX          │
+│   (Document)    │      │   (Word)        │
+├─────────────────┤      ├─────────────────┤
+│ Best for:       │      │ Best for:       │
+│ • Invoices     │      │ • Documentation │
+│ • Reports      │      │ • Letters       │
+│ • Simple PDFs  │      │ • Contracts     │
+├─────────────────┤      ├─────────────────┤
+│ TCPDF: Simple  │      │ Memory: 2GB      │
+│ pdflib: Advanced│      │ Stream: NO      │
+│ Memory: 2GB    │      └─────────────────┘
+│ Stream: NO     │
+└─────────────────┘
+```
+
+### Memory Usage by Format
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        MEMORY EFFICIENCY                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  CSV / SQL              ████████████████░░░░░░░░░░░  ~1GB (Streaming)  │
+│                                                                         │
+│  XLSX                   █████████████████████████░░  ~2GB               │
+│                                                                         │
+│  PDF (TCPDF)           █████████████████████████░░  ~2GB               │
+│  PDF (Advanced)        █████████████████████████░░  ~2GB               │
+│                                                                         │
+│  DOCX                  █████████████████████████░░  ~2GB               │
+│                                                                         │
+├─────────────────────────────────────────────────────────────────────────┤
+│  KEY INSIGHT:                                                           │
+│  • CSV/SQL use STREAMING - constant memory (best for 100M+)            │
+│  • XLSX/PDF/DOCX load ALL data - memory grows with records             │
+│  • For 100M+ records, ALWAYS use CSV!                                   │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Chunk Size Strategy
