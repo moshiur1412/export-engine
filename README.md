@@ -29,7 +29,7 @@ TurboStream Export Engine is designed for Laravel applications that need to expo
 ## Requirements
 
 - PHP 8.1+
-- Laravel 9.0, 10.0, or 11.0
+- Laravel 9.0, 10.0, 11.0, 12.0, or 13.0
 - Redis (recommended) or Database queue driver
 - ext-json, ext-mbstring
 
@@ -601,6 +601,19 @@ The package uses `cursor()` instead of `chunk()` to stream database records with
 | XLSX | Memory-based | 2GB | Uses running totals |
 | PDF | Memory-based | 2GB | Slow for 50K+ records |
 | DOCX | Memory-based | 2GB | Works well with 47K+ records |
+
+## Testing Package
+
+For a complete Laravel application demonstrating the export engine in action, see the testing package:
+
+**Testing App**: [https://github.com/moshiur1412/turbo-export-app](https://github.com/moshiur1412/turbo-export-app)
+
+This testing package includes:
+- Full Laravel application setup
+- Example models and controllers
+- Export API routes and views
+- Queue worker configuration
+- Sample data generators
 
 ## Testing
 
