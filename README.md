@@ -1013,7 +1013,7 @@ EXPORT_LOG_PROGRESS_INTERVAL=500000
 
 ## Security
 
-If you discover security vulnerabilities, please email support@turbostream.dev instead of using the public issue tracker.
+If you discover security vulnerabilities, please email moshiur.bro@gmail.com instead of using the public issue tracker.
 
 ## License
 
